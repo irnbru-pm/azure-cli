@@ -1,41 +1,10 @@
-import json
 import os
 from pathlib import Path
 import runpy
-import struct
 import sys
-from threading import Lock
 
 resources = Path(__file__).parent
 sys.path[:0] = [str(resources), str(resources / 'sdk')]
-os.set_inheritable(3, False)
-channel = os.fdopen(3, 'r+b', buffering=0)
-lock = Lock()
-
-
-def read_exact(count):
-    data = bytearray()
-    while len(data) < count:
-        chunk = channel.read(count - len(data))
-        if not chunk:
-            raise RuntimeError('IrnBru credential service disconnected')
-        data.extend(chunk)
-    return data
-
-
-def request(op, value, expected):
-    data = json.dumps(dict(op=op, profile='AzureCloud', value=value, expected=expected)).encode()
-    with lock:
-        channel.write(struct.pack('!I', len(data)) + data)
-        size, = struct.unpack('!I', read_exact(4))
-        if not 0 < size <= 262144:
-            raise RuntimeError('Invalid IrnBru credential response')
-        reply = json.loads(read_exact(size))
-    if reply.get('ok') is not True:
-        raise RuntimeError(reply.get('error', 'IrnBru credential request failed'))
-    return reply['value']
-
-
 os.environ.update(AZURE_CONFIG_DIR=str(Path.home() / '.azure-irnbru'),
                   AZURE_EXTENSION_DIR=str(resources / 'extensions'),
                   AZURE_EXTENSION_SYS_DIR=str(resources / 'extensions'),
@@ -44,6 +13,7 @@ os.environ.update(AZURE_CONFIG_DIR=str(Path.home() / '.azure-irnbru'),
                   AZURE_CORE_ENABLE_BROKER_ON_MAC='false')
 
 from azure.cli.core import cloud, _profile
+from azure.cli.core.auth.irnbru_broker import request
 from azure.cli.core.auth import identity
 from store import SessionCache
 
@@ -59,12 +29,6 @@ class EmptyPrincipalStore:
     def save(self, value):
         if value:
             unsupported()
-
-
-def cache(instance):
-    if instance.authority.rstrip('/') != 'https://login.microsoftonline.com':
-        unsupported()
-    return SessionCache(request)
 
 
 def clear_accounts(profile):
@@ -86,8 +50,6 @@ _profile.Profile.logout_all = clear_accounts
 _profile.Profile.login_with_managed_identity = unsupported
 identity.Identity.logout_user = logout_one
 identity.Identity.logout_service_principal = lambda self, username: None
-identity.Identity._load_msal_token_cache = cache
-identity.Identity._load_msal_http_cache = lambda self: {}
 identity.load_secret_store = lambda *args: EmptyPrincipalStore()
 identity.Identity.login_with_service_principal = unsupported
 identity.Identity.login_with_username_password = unsupported

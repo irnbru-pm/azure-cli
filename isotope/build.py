@@ -51,6 +51,9 @@ with tempfile.TemporaryDirectory(dir=output.parent) as temp:
     unpack('python',resources)
     python = resources / 'python'
     (stage / 'libexec/lib/python3.14/site-packages').rename(resources / 'sdk')
+    auth = Path('azure/cli/core/auth')
+    for module in ('identity.py', 'irnbru_broker.py'):
+        shutil.copyfile(tree / 'src/azure-cli-core' / auth / module, resources / 'sdk' / auth / module)
     for filename in ['LICENSE','ThirdPartyNotices.txt','NOTICE.txt']:
         shutil.copy(stage / filename, resources)
     for filename in ['bootstrap.py','store.py']:

@@ -15,7 +15,7 @@ from msal import PublicClientApplication, ConfidentialClientApplication
 
 from .constants import AZURE_CLI_CLIENT_ID
 from .msal_credentials import UserCredential, ServicePrincipalCredential
-from .persistence import load_persisted_token_cache, file_extensions, load_secret_store
+from .persistence import file_extensions, load_secret_store
 from .util import check_result
 
 # Service principal entry properties. Names are taken from OAuth 2.0 client credentials flow parameters:
@@ -128,14 +128,14 @@ class Identity:  # pylint: disable=too-many-instance-attributes
         return self._msal_app_instance
 
     def _load_msal_token_cache(self):
-        # Store for user token persistence
-        cache = load_persisted_token_cache(self._token_cache_file, self._encrypt)
-        return cache
+        from .irnbru_broker import request
+        from store import SessionCache
+        if self.authority.rstrip('/') != 'https://login.microsoftonline.com':
+            raise ValueError("Managed user sessions require Azure public cloud")
+        return SessionCache(request)
 
     def _load_msal_http_cache(self):
-        from .binary_cache import BinaryCache
-        http_cache = BinaryCache(self._msal_http_cache_file)
-        return http_cache
+        return {}
 
     @property
     def _service_principal_store(self):
