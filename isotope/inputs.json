@@ -1,0 +1,12 @@
+{
+  "az": {
+    "version": "2.93.0",
+    "url": "https://github.com/Azure/azure-cli/releases/download/azure-cli-2.93.0/azure-cli-2.93.0-macos-arm64.tar.gz",
+    "sha256": "1912c5b03d7c0545f2eb486e725473e03b5107e130ed380a7d432c467b7dc4c0"
+  },
+  "python": {
+    "version": "3.14.10",
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261026/cpython-3.14.10%2B20261026-aarch64-apple-darwin-install_only.tar.gz",
+    "sha256": "30a18bcb9ab75e485b4bf4e5d783dde165571e7e42c56dff47a2d2c5345183a4"
+  }
+}
